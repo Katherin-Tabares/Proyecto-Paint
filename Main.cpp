@@ -54,8 +54,8 @@ static GLuint VAO = 0, VBO = 0, EBO = 0;
 static std::vector<VertexSquare> g_gridVerts;
 static std::vector<GLuint> g_gridIndices;
 
-static int g_rows = 100;
-static int g_cols = 100;
+static int g_rows = 250;
+static int g_cols = 250;
 static float g_baseColor[4] = { 0.0f, 1.0f, 1.0f, 1.0f }; // Color de la grilla
 //static float g_lineColorLinea[4] = {1.0f, 0.0f, 0.0f, 1.0f}; // Color de la línea 
 //static float g_lineColorCirculo[4] = { 1.0f, 0.0f, 1.0f, 1.0f }; // Color del círculo
@@ -205,16 +205,16 @@ void LineBresenham(std::vector<VertexSquare>& verts, int cols, int rows,
 //Circulo de bresenham
 
 void set8Octants(std::vector<VertexSquare>& verts, int cols, int rows,
-	int cx, int cy, int x, int y, const float color[4])
+	int cx, int cy, int x, int y, const float colorBorde[4])
 {
-	setCellColor(verts, cols, rows, cx + x, cy + y, color); // Octante 1
-	setCellColor(verts, cols, rows, cx - x, cy + y, color); // Octante 2
-	setCellColor(verts, cols, rows, cx + x, cy - y, color); // Octante 3
-	setCellColor(verts, cols, rows, cx - x, cy - y, color); // Octante 4
-	setCellColor(verts, cols, rows, cx + y, cy + x, color); // Octante 5
-	setCellColor(verts, cols, rows, cx - y, cy + x, color); // Octante 6
-	setCellColor(verts, cols, rows, cx + y, cy - x, color); // Octante 7
-	setCellColor(verts, cols, rows, cx - y, cy - x, color); // Octante 8
+	setCellColor(verts, cols, rows, cx + x, cy + y, colorBorde); // Octante 1
+	setCellColor(verts, cols, rows, cx - x, cy + y, colorBorde); // Octante 2
+	setCellColor(verts, cols, rows, cx + x, cy - y, colorBorde); // Octante 3
+	setCellColor(verts, cols, rows, cx - x, cy - y, colorBorde); // Octante 4
+	setCellColor(verts, cols, rows, cx + y, cy + x, colorBorde); // Octante 5
+	setCellColor(verts, cols, rows, cx - y, cy + x, colorBorde); // Octante 6
+	setCellColor(verts, cols, rows, cx + y, cy - x, colorBorde); // Octante 7
+	setCellColor(verts, cols, rows, cx - y, cy - x, colorBorde); // Octante 8
 }
 
 
@@ -225,6 +225,34 @@ void CirculoBresenham(std::vector<VertexSquare>& verts, int cols, int rows,
 
 	int cx = centerX + cols / 2;
 	int cy = centerY + rows / 2;
+
+	auto pintarFilaH = [&](int xI, int xF, int rowY) {
+		if (xI > xF) std::swap(xI, xF);
+		for (int x = xI; x <= xF; ++x) {
+			setCellColor(verts, cols, rows, x, rowY, colorRelleno);
+		}
+	};
+	if (rellenado) {
+		int x = 0;
+		int y = radius;
+		int d = 3 - 2 * radius;
+
+		while (x <= y) {
+			pintarFilaH(cx - x, cx + x, cy + y);
+			pintarFilaH(cx - x, cx + x, cy - y);
+			pintarFilaH(cx - y, cx + y, cy + x);
+			pintarFilaH(cx - y, cx + y, cy - x);
+
+			if (d < 0) {
+				d = d + 4 * x + 6;
+			}
+			else {
+				d = d + 4 * (x - y) + 10;
+				y--;
+			}
+			x++;
+		}
+	}
 
 	int x = 0;
 	int y = -radius;
@@ -241,7 +269,9 @@ void CirculoBresenham(std::vector<VertexSquare>& verts, int cols, int rows,
 
 		set8Octants(verts, cols, rows, cx, cy, x, y, colorBorde);
 		x += 1;
+		
 	}
+
 }
 
 //Rectangulo
@@ -424,7 +454,7 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow* window = glfwCreateWindow(800, 800, "Ventana", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(1080, 1080, "Ventana", NULL, NULL);
 	if (window == NULL) {
 		std::cout << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
@@ -435,7 +465,7 @@ int main()
 	glfwSetMouseButtonCallback(window, mouse_button_callback);
 	
 	gladLoadGL();
-	glViewport(0, 0, 800, 800);
+	glViewport(0, 0, 1080, 1080);
 
 
 	IMGUI_CHECKVERSION();
@@ -515,35 +545,35 @@ int main()
 			ImGui::PushID((int)i);
 			if (ImGui::TreeNode(g_figuras[i].nombre)) {
 				if (g_figuras[i].tipo == FIG_LINEA) {
-					ImGui::ColorEdit3("Color Linea", g_figuras[i].color);
+					ImGui::ColorEdit3("Linea", g_figuras[i].color);
 					ImGui::SliderInt("X0", &g_figuras[i].x0, -50, 50);
 					ImGui::SliderInt("Y0", &g_figuras[i].y0, -50, 50);
 					ImGui::SliderInt("X1", &g_figuras[i].x1, -50, 50);
 					ImGui::SliderInt("Y1", &g_figuras[i].y1, -50, 50);
 				} else if (g_figuras[i].tipo == FIG_CIRCULO) {
-					ImGui::ColorEdit3("Color Borde", g_figuras[i].color);
-					ImGui::Checkbox("Rellenar Figura", &g_figuras[i].rellenado);
+					ImGui::ColorEdit3("Borde", g_figuras[i].color);
+					ImGui::Checkbox("Rellenor Figura", &g_figuras[i].rellenado);
 					if (g_figuras[i].rellenado) {
-						ImGui::ColorEdit3("Color Relleno", g_figuras[i].colorRelleno);
+						ImGui::ColorEdit3("Relleno", g_figuras[i].colorRelleno);
 					}
-					ImGui::SliderInt("Centro X", &g_figuras[i].x, -40, 40);
-					ImGui::SliderInt("Centro Y", &g_figuras[i].y, -40, 40);
+					ImGui::SliderInt("X", &g_figuras[i].x, -40, 40);
+					ImGui::SliderInt("Y", &g_figuras[i].y, -40, 40);
 					ImGui::SliderInt("Radio", &g_figuras[i].r, 1, 40);
 				} else if (g_figuras[i].tipo == FIG_RECTANGULO) {
-					ImGui::ColorEdit3("Color Borde", g_figuras[i].color);
-					ImGui::Checkbox("Rellenar Figura", &g_figuras[i].rellenado);
+					ImGui::ColorEdit3("Borde", g_figuras[i].color);
+					ImGui::Checkbox("Rellenor Figura", &g_figuras[i].rellenado);
 					if (g_figuras[i].rellenado) {
-						ImGui::ColorEdit3("Color Relleno", g_figuras[i].colorRelleno);
+						ImGui::ColorEdit3("Relleno", g_figuras[i].colorRelleno);
 					}
 					ImGui::SliderInt("X0", &g_figuras[i].x0, -50, 50);
 					ImGui::SliderInt("Y0", &g_figuras[i].y0, -50, 50);
 					ImGui::SliderInt("X1", &g_figuras[i].x1, -50, 50);
 					ImGui::SliderInt("Y1", &g_figuras[i].y1, -50, 50);
 				} else if (g_figuras[i].tipo == FIG_TRIANGULO) {
-					ImGui::ColorEdit3("Color Borde", g_figuras[i].color);
-					ImGui::Checkbox("Rellenar Figura", &g_figuras[i].rellenado);
+					ImGui::ColorEdit3("Borde", g_figuras[i].color);
+					ImGui::Checkbox("Rellenor Figura", &g_figuras[i].rellenado);
 					if (g_figuras[i].rellenado) {
-						ImGui::ColorEdit3("Color Relleno", g_figuras[i].colorRelleno);
+						ImGui::ColorEdit3("Relleno", g_figuras[i].colorRelleno);
 					}
 					ImGui::SliderInt("X0", &g_figuras[i].x0, -50, 50);
 					ImGui::SliderInt("Y0", &g_figuras[i].y0, -50, 50);
