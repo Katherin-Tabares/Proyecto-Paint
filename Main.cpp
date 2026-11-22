@@ -621,7 +621,7 @@ int main()
 				int rx0, ry0, rx1, ry1;
 				Rotar((float)fig.x0, (float)fig.y0, mx, my, fig.angulo, rx0, ry0);
 				Rotar((float)fig.x1, (float)fig.y1, mx, my, fig.angulo, rx1, ry1);
-				LineBresenham(g_gridVerts, g_cols, g_rows, fig.x0, fig.y0, fig.x1, fig.y1, fig.color);
+				LineBresenham(g_gridVerts, g_cols, g_rows, rx0, ry0, rx1, ry1, fig.color);
 			} else if (fig.tipo == FIG_CIRCULO) {
 				CirculoBresenham(g_gridVerts, g_cols, g_rows, fig.x, fig.y, fig.r, fig.color, fig.colorRelleno, fig.rellenado);
 			} else if (fig.tipo == FIG_RECTANGULO) {
@@ -634,7 +634,14 @@ int main()
 				for (int k = 0; k < 4; ++k) {
 					Rotar(px[k], py[k], cx, cy, fig.angulo, vx[k], vy[k]);
 				}
-				Rectangulo(g_gridVerts, g_cols, g_rows, fig.x0, fig.y0, fig.x1, fig.y1, fig.color, fig.colorRelleno, fig.rellenado);
+				if (fig.rellenado) {
+					Triangulo(g_gridVerts, g_cols, g_rows, vx[0], vy[0], vx[1], vy[1], vx[2], vy[2], fig.colorRelleno, fig.colorRelleno, true);
+					Triangulo(g_gridVerts, g_cols, g_rows, vx[0], vy[0], vx[2], vy[2], vx[3], vy[3], fig.colorRelleno, fig.colorRelleno, true);
+				}
+				LineBresenham(g_gridVerts, g_cols, g_rows, vx[0], vy[0], vx[1], vy[1], fig.color);
+				LineBresenham(g_gridVerts, g_cols, g_rows, vx[1], vy[1], vx[2], vy[2], fig.color);
+				LineBresenham(g_gridVerts, g_cols, g_rows, vx[2], vy[2], vx[3], vy[3], fig.color);
+				LineBresenham(g_gridVerts, g_cols, g_rows, vx[3], vy[3], vx[0], vy[0], fig.color);
 			} else if (fig.tipo == FIG_TRIANGULO) {
 				float cx = (fig.x0 + fig.x1 + fig.x2) / 3.0f;
 				float cy = (fig.y0 + fig.y1 + fig.y2) / 3.0f;
@@ -642,7 +649,7 @@ int main()
 				Rotar((float)fig.x0, (float)fig.y0, cx, cy, fig.angulo, rx0, ry0);
 				Rotar((float)fig.x1, (float)fig.y1, cx, cy, fig.angulo, rx1, ry1);
 				Rotar((float)fig.x2, (float)fig.y2, cx, cy, fig.angulo, rx2, ry2);
-				Triangulo(g_gridVerts, g_cols, g_rows, fig.x0, fig.y0, fig.x1, fig.y1, fig.x2, fig.y2, fig.color, fig.colorRelleno, fig.rellenado);
+				Triangulo(g_gridVerts, g_cols, g_rows, rx0, ry0, rx1, ry1, rx2, ry2, fig.color, fig.colorRelleno, fig.rellenado);
 			}
 		}
 
