@@ -44,6 +44,7 @@ struct Figura {
 	float color[4];
 	float colorRelleno[4];
 	bool rellenado;
+	float angulo = 0.0f;
 
 	int x0, y0, x1, y1, x2, y2; //Lina, cuadrado, triangulo
 	int x, y, r; // Circulo
@@ -57,20 +58,30 @@ static std::vector<GLuint> g_gridIndices;
 static int g_rows = 250;
 static int g_cols = 250;
 static float g_baseColor[4] = { 0.0f, 1.0f, 1.0f, 1.0f }; // Color de la grilla
-//static float g_lineColorLinea[4] = {1.0f, 0.0f, 0.0f, 1.0f}; // Color de la línea 
-//static float g_lineColorCirculo[4] = { 1.0f, 0.0f, 1.0f, 1.0f }; // Color del círculo
-//static int g_x0 = -39, g_y0 = -35, g_x1 = 2, g_y1 = 0;  // linea x=-49 a 39, y= -40 a 39 de ahi se sale del cuadrante de pantalla (800x800)
 
 static std::vector<Figura> g_figuras;
-
-/*static int g_centerX = 10;  // Centro X 
-static int g_centerY = 10;  // Centro Y 
-static int g_radius = 10;   // Radio*/
 
 static int g_modoCreacion = -1;
 static int g_pasoMouse = 0;
 static int g_tempX0 = 0, g_tempY0 = 0;
 static int g_tempX1 = 0, g_tempY1 = 0;
+
+void Rotar(float px, float py, float pivX, float pivY, float anguloG, int& outX, int& outY) {
+	constexpr float PI = 3.14159265358979323846f;
+	float rad = anguloG * (PI / 180.0f);
+	float c = std::cos(rad);
+	float s = std::sin(rad);
+
+	float dx = px - pivX;
+	float dy = py - pivY;
+
+	float rx = dx * c - dy * s + pivX;
+	float ry = dx * s + dy * c + pivY;
+
+	outX = static_cast<int>(std::round(rx));
+	outY = static_cast<int>(std::round(ry));
+
+}
 
 void generatePixelGrid(std::vector<VertexSquare>& outVerts, std::vector<GLuint>& outIndices,
 	int rows, int cols, const float color[4])
@@ -370,6 +381,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 				nuevaLinea.x0 = g_tempX0; nuevaLinea.y0 = g_tempY0;
 				nuevaLinea.x1 = gridX; nuevaLinea.y1 = gridY;
 				nuevaLinea.rellenado = false;
+				nuevaLinea.angulo = 0.0f;
 				g_figuras.push_back(nuevaLinea);
 				g_pasoMouse = 0; g_modoCreacion = -1;
 			}
@@ -389,6 +401,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 				nuevoCirculo.x = g_tempX0; nuevoCirculo.y = g_tempY0;
 				nuevoCirculo.r = radio;
 				nuevoCirculo.rellenado = true;
+				nuevoCirculo.angulo = 0.0f;
 				g_figuras.push_back(nuevoCirculo);
 				g_pasoMouse = 0; g_modoCreacion = -1;
 			}
@@ -405,6 +418,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 				nuevoRect.x0 = g_tempX0; nuevoRect.y0 = g_tempY0;
 				nuevoRect.x1 = gridX; nuevoRect.y1 = gridY;
 				nuevoRect.rellenado = true;
+				nuevoRect.angulo = 0.0f;
 				g_figuras.push_back(nuevoRect);
 				g_pasoMouse = 0; g_modoCreacion = -1;
 			}
@@ -428,6 +442,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 				nuevoTri.x1 = g_tempX1; nuevoTri.y1 = g_tempY1;
 				nuevoTri.x2 = gridX; nuevoTri.y2 = gridY;
 				nuevoTri.rellenado = true;
+				nuevoTri.angulo = 0.0f;
 				g_figuras.push_back(nuevoTri);
 				g_pasoMouse = 0; g_modoCreacion = -1;
 			}
@@ -439,11 +454,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 
 }
-
-void shaders() {
-
-}
-
 
 
 int main()
@@ -510,7 +520,7 @@ int main()
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		ImGui::Begin("Gestor de Figuras Geometricas");
+		ImGui::Begin("Figuras Geometricas");
 		ImGui::Text("FPS: %.1f", io.Framerate);
 		ImGui::Separator();
 
@@ -550,6 +560,7 @@ int main()
 					ImGui::SliderInt("Y0", &g_figuras[i].y0, -50, 50);
 					ImGui::SliderInt("X1", &g_figuras[i].x1, -50, 50);
 					ImGui::SliderInt("Y1", &g_figuras[i].y1, -50, 50);
+					ImGui::SliderFloat("Rotación", &g_figuras[i].angulo, -180.0f, 180.0f, "%.1f deg");
 				} else if (g_figuras[i].tipo == FIG_CIRCULO) {
 					ImGui::ColorEdit3("Borde", g_figuras[i].color);
 					ImGui::Checkbox("Rellenor Figura", &g_figuras[i].rellenado);
@@ -569,6 +580,7 @@ int main()
 					ImGui::SliderInt("Y0", &g_figuras[i].y0, -50, 50);
 					ImGui::SliderInt("X1", &g_figuras[i].x1, -50, 50);
 					ImGui::SliderInt("Y1", &g_figuras[i].y1, -50, 50);
+					ImGui::SliderFloat("Rotación", &g_figuras[i].angulo, -180.0f, 180.0f, "%.1f deg");
 				} else if (g_figuras[i].tipo == FIG_TRIANGULO) {
 					ImGui::ColorEdit3("Borde", g_figuras[i].color);
 					ImGui::Checkbox("Rellenor Figura", &g_figuras[i].rellenado);
@@ -581,6 +593,7 @@ int main()
 					ImGui::SliderInt("Y1", &g_figuras[i].y1, -50, 50);
 					ImGui::SliderInt("X2", &g_figuras[i].x2, -50, 50);
 					ImGui::SliderInt("Y2", &g_figuras[i].y2, -50, 50);
+					ImGui::SliderFloat("Rotación", &g_figuras[i].angulo, -180.0f, 180.0f, "%.1f deg");
 				}
 
 				if (ImGui::Button("Eliminar Figura")) {
@@ -603,12 +616,32 @@ int main()
 
 		for (const auto& fig : g_figuras) {
 			if (fig.tipo == FIG_LINEA) {
+				float mx = (fig.x0 + fig.x1) * 0.5f;
+				float my = (fig.y0 + fig.y1) * 0.5f;
+				int rx0, ry0, rx1, ry1;
+				Rotar((float)fig.x0, (float)fig.y0, mx, my, fig.angulo, rx0, ry0);
+				Rotar((float)fig.x1, (float)fig.y1, mx, my, fig.angulo, rx1, ry1);
 				LineBresenham(g_gridVerts, g_cols, g_rows, fig.x0, fig.y0, fig.x1, fig.y1, fig.color);
 			} else if (fig.tipo == FIG_CIRCULO) {
 				CirculoBresenham(g_gridVerts, g_cols, g_rows, fig.x, fig.y, fig.r, fig.color, fig.colorRelleno, fig.rellenado);
 			} else if (fig.tipo == FIG_RECTANGULO) {
+				float px[4] = { (float)fig.x0, (float)fig.x1, (float)fig.x1, (float)fig.x0 };
+				float py[4] = { (float)fig.y0, (float)fig.y0, (float)fig.y1, (float)fig.y1 };
+				float cx = (fig.x0 + fig.x1) * 0.5f;
+				float cy = (fig.y0 + fig.y1) * 0.5f;
+
+				int vx[4], vy[4];
+				for (int k = 0; k < 4; ++k) {
+					Rotar(px[k], py[k], cx, cy, fig.angulo, vx[k], vy[k]);
+				}
 				Rectangulo(g_gridVerts, g_cols, g_rows, fig.x0, fig.y0, fig.x1, fig.y1, fig.color, fig.colorRelleno, fig.rellenado);
 			} else if (fig.tipo == FIG_TRIANGULO) {
+				float cx = (fig.x0 + fig.x1 + fig.x2) / 3.0f;
+				float cy = (fig.y0 + fig.y1 + fig.y2) / 3.0f;
+				int rx0, ry0, rx1, ry1, rx2, ry2;
+				Rotar((float)fig.x0, (float)fig.y0, cx, cy, fig.angulo, rx0, ry0);
+				Rotar((float)fig.x1, (float)fig.y1, cx, cy, fig.angulo, rx1, ry1);
+				Rotar((float)fig.x2, (float)fig.y2, cx, cy, fig.angulo, rx2, ry2);
 				Triangulo(g_gridVerts, g_cols, g_rows, fig.x0, fig.y0, fig.x1, fig.y1, fig.x2, fig.y2, fig.color, fig.colorRelleno, fig.rellenado);
 			}
 		}
