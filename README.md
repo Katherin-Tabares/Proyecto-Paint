@@ -1,6 +1,6 @@
 <a name="readme-top"></a>
 
-# Grilla interactiva, y figuras mediante el algoritmo de Bresenham
+# Grilla interactiva y figuras mediante el algoritmo de Bresenham
 
 > El proyecto consiste en una ventana donde podemos crear 4 distintas figuras, las cuales son línea, circulo, rectángulo y triangulo, donde dichas figuras se le puede cambiar el tamaño, pintarlas y rotarlas.
 
