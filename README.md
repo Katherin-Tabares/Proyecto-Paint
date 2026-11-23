@@ -53,5 +53,6 @@ git clone https://github.com/Katherin-Tabares/Proyecto-Paint.git
 - Lista de figuras creadas.
 
 ## Autor
-GitHub: [@Katherin-Tabares](https://github.com/Katherin-Tabares)
-https://youtu.be/H53HXR0Qm-M
+👤 **Katherin Tabares**
+- GitHub: [@Katherin-Tabares](https://github.com/Katherin-Tabares)
+- https://youtu.be/H53HXR0Qm-M
